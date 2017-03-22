@@ -37,5 +37,16 @@ class StackOverflowSuite extends FunSuite with BeforeAndAfterAll {
     assert(instantiatable, "Can't instantiate a StackOverflow object")
   }
 
+  val sc: SparkContext = new SparkContext(new SparkConf().setMaster("local").setAppName("BTM"))
+  val lines   = sc.textFile("src/main/resources/stackoverflow/stackoverflow.csv")
+
+  test("correct number of vectors") {
+    testObject
+    val raw     = testObject.rawPostings(lines)
+    val grouped = testObject.groupedPostings(raw)
+    val scored  = testObject.scoredPostings(grouped)
+    val vectors = testObject.vectorPostings(scored)
+    assert(vectors.count() == 2121822, "Incorrect number of vectors: " + vectors.count())
+  }
 
 }
