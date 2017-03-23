@@ -25,7 +25,7 @@ object StackOverflow extends StackOverflow {
     val grouped = groupedPostings(raw)
     val scored  = scoredPostings(grouped)
     val vectors = vectorPostings(scored)
-    assert(vectors.count() == 2121822, "Incorrect number of vectors: " + vectors.count())
+    //assert(vectors.count() == 2121822, "Incorrect number of vectors: " + vectors.count())
 
     val means   = kmeans(sampleVectors(vectors), vectors, debug = true)
     val results = clusterResults(means, vectors)
@@ -122,8 +122,7 @@ class StackOverflow extends Serializable {
         }
       }
     }
-
-    scored.filter(s => s._1.tags.nonEmpty).map(t => (firstLangInTag(t._1.tags,langs).get * langSpread,t._2))
+    scored.filter(s => s._1.tags.nonEmpty).map(t => (firstLangInTag(t._1.tags,langs).get * langSpread,t._2)).persist()
   }
 
 
@@ -181,6 +180,8 @@ class StackOverflow extends Serializable {
     val newMeans = means.clone() // you need to compute newMeans
 
     // TODO: Fill in the newMeans array
+    ???
+    
     val distance = euclideanDistance(means, newMeans)
 
     if (debug) {
