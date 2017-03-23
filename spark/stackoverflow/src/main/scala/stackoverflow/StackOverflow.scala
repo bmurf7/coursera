@@ -25,11 +25,11 @@ object StackOverflow extends StackOverflow {
     val grouped = groupedPostings(raw)
     val scored  = scoredPostings(grouped)
     val vectors = vectorPostings(scored)
-    //assert(vectors.count() == 2121822, "Incorrect number of vectors: " + vectors.count())
+    assert(vectors.count() == 2121822, "Incorrect number of vectors: " + vectors.count())
 
     val means   = kmeans(sampleVectors(vectors), vectors, debug = true)
-    val results = clusterResults(means, vectors)
-    printResults(results)
+    //val results = clusterResults(means, vectors)
+    //printResults(results)
   }
 }
 
@@ -180,8 +180,19 @@ class StackOverflow extends Serializable {
     val newMeans = means.clone() // you need to compute newMeans
 
     // TODO: Fill in the newMeans array
-    ???
-    
+    // Based on these initial means, and the provided variables 𝚌𝚘𝚗𝚟𝚎𝚛𝚐𝚎𝚍 method, 
+    // implement the K-means algorithm by iteratively:
+    //
+    // - pairing each vector with the index of the closest mean (its cluster);
+    // - computing the new means by averaging the values of each cluster
+    // 
+    //  vector RDD[(lang_index,max_score)]
+    //  means  Array[(x, y)]
+    vectors.map(v => (findClosest(v, means), v))  // RDD[(means_index, (lang_index, max_score))]
+           .groupByKey()                          // RDD[(means_index, Iterable[(lang_index, max_score)])]
+           .mapValues(averageVectors)             // RDD[(means_index, mean_vector)]
+           .foreach(newMean => newMeans.update(newMean._1,newMean._2))
+
     val distance = euclideanDistance(means, newMeans)
 
     if (debug) {
