@@ -191,6 +191,7 @@ class StackOverflow extends Serializable {
     vectors.map(v => (findClosest(v, means), v))  // RDD[(means_index, (lang_index, max_score))]
            .groupByKey()                          // RDD[(means_index, Iterable[(lang_index, max_score)])]
            .mapValues(averageVectors)             // RDD[(means_index, mean_vector)]
+           .collect()
            .foreach(newMean => newMeans.update(newMean._1,newMean._2))
 
     val distance = euclideanDistance(means, newMeans)
@@ -293,22 +294,19 @@ class StackOverflow extends Serializable {
 
     // IN: ls sorted List of Int
     def calcMedian(ls: List[Int]): Int = {
-      if (ls.size == 0) 0
-      else if (ls.size == 1) ls.head
-      else {
-        val middle = ls.size / 2
-        if (ls.size % 2 == 1) ls(middle)
-        else ls(middle - 1) + ls(middle + 1) / 2
-      }
+      val middle = ls.size / 2
+      if (ls.size % 2 == 1) ls(middle)
+      else (ls(middle - 1) + ls(middle)) / 2
     }
 
     val median = closestGrouped.mapValues { vs =>
-      // vs: Iterable[(lang_index, max_score)]
-      val langLabel: String   = ??? // most common language in the cluster
-      val langPercent: Double = ??? // percent of the questions in the most common language
+      // vs: Iterable[(lang_index * langSpread, max_score)]
+      val (x, n) = vs.groupBy(_._1).mapValues(_.size).maxBy(_._2)
+      val langLabel: String   = langs(x / langSpread)// most common language in the cluster
+      val langPercent: Double = n * 100d / vs.size // percent of the questions in the most common language
       val clusterSize: Int    = vs.size
       val medianScore: Int    = calcMedian(vs.map(_._2).toList.sorted)
-      val avgScore: Int       = vs.map(_._2).sum/vs.size
+      //val avgScore: Int       = vs.map(_._2).sum/vs.size
 
       (langLabel, langPercent, clusterSize, medianScore)
     }
