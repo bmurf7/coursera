@@ -28,8 +28,8 @@ object StackOverflow extends StackOverflow {
     assert(vectors.count() == 2121822, "Incorrect number of vectors: " + vectors.count())
 
     val means   = kmeans(sampleVectors(vectors), vectors, debug = true)
-    //val results = clusterResults(means, vectors)
-    //printResults(results)
+    val results = clusterResults(means, vectors)
+    printResults(results)
   }
 }
 
@@ -186,8 +186,8 @@ class StackOverflow extends Serializable {
     // - pairing each vector with the index of the closest mean (its cluster);
     // - computing the new means by averaging the values of each cluster
     // 
-    //  vector RDD[(lang_index,max_score)]
-    //  means  Array[(x, y)]
+    //  vectors RDD[(lang_index,max_score)]
+    //  means   Array[(x, y)]
     vectors.map(v => (findClosest(v, means), v))  // RDD[(means_index, (lang_index, max_score))]
            .groupByKey()                          // RDD[(means_index, Iterable[(lang_index, max_score)])]
            .mapValues(averageVectors)             // RDD[(means_index, mean_vector)]
@@ -282,19 +282,33 @@ class StackOverflow extends Serializable {
 
 
   //
-  //
   //  Displaying results:
   //
-  //
+  //  IN: means   Array[(x, y)]
+  //  IN: vectors RDD[(lang_index,max_score)]
+  // OUT: Array[(langLabel, langPercent, clusterSize, medianScore)]
   def clusterResults(means: Array[(Int, Int)], vectors: RDD[(Int, Int)]): Array[(String, Double, Int, Int)] = {
-    val closest = vectors.map(p => (findClosest(p, means), p))
-    val closestGrouped = closest.groupByKey()
+    val closest = vectors.map(p => (findClosest(p, means), p))  // RDD[(means_index, (lang_index, max_score))]
+    val closestGrouped = closest.groupByKey()                   // RDD[(means_index, Iterable[(lang_index, max_score)])]
+
+    // IN: ls sorted List of Int
+    def calcMedian(ls: List[Int]): Int = {
+      if (ls.size == 0) 0
+      else if (ls.size == 1) ls.head
+      else {
+        val middle = ls.size / 2
+        if (ls.size % 2 == 1) ls(middle)
+        else ls(middle - 1) + ls(middle + 1) / 2
+      }
+    }
 
     val median = closestGrouped.mapValues { vs =>
+      // vs: Iterable[(lang_index, max_score)]
       val langLabel: String   = ??? // most common language in the cluster
       val langPercent: Double = ??? // percent of the questions in the most common language
-      val clusterSize: Int    = ???
-      val medianScore: Int    = ???
+      val clusterSize: Int    = vs.size
+      val medianScore: Int    = calcMedian(vs.map(_._2).toList.sorted)
+      val avgScore: Int       = vs.map(_._2).sum/vs.size
 
       (langLabel, langPercent, clusterSize, medianScore)
     }
