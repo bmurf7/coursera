@@ -73,7 +73,7 @@ object TimeUsage {
     * @param line Raw fields
     */
   def row(line: List[String]): Row =
-    ???
+    Row( line.head.toString, line.tail.map(_.toDouble) )
 
   /** @return The initial data frame columns partitioned in three groups: primary needs (sleeping, eating, etc.),
     *         work and other (leisure activities)
@@ -91,7 +91,16 @@ object TimeUsage {
     *    “t10”, “t12”, “t13”, “t14”, “t15”, “t16” and “t18” (those which are not part of the previous groups only).
     */
   def classifiedColumns(columnNames: List[String]): (List[Column], List[Column], List[Column]) = {
-    ???
+    val primaryPrefix = List[String]("t01", "t03", "t11", "t1801", "t1803")
+    val workingPrefix = List[String]("t05", "t1805")
+    val leisurePrefix = List[String]("t02", "t04", "t06", "t07", "t08", "t09", "t10", "t12", "t13", "t14", "t15", "t16", "t18")
+    val leisureNotPrefix = List[String]("t1801", "t1803", "t1805")
+    val primary = columnNames.filter { p => primaryPrefix.exists(p.startsWith) }.map(col(_))
+    val working = columnNames.filter { p => workingPrefix.exists(p.startsWith) }.map(col(_))
+    val leisure = columnNames.filter { p => leisurePrefix.exists(p.startsWith) }
+                             .filterNot { p => leisureNotPrefix.exists(p.startsWith) }
+                             .map(col(_))
+    (primary, working, leisure)
   }
 
   /** @return a projection of the initial DataFrame such that all columns containing hours spent on primary needs
