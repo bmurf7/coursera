@@ -18,6 +18,8 @@ class TimeUsageSuite extends FunSuite with BeforeAndAfterAll {
       .config("spark.master", "local")
       .getOrCreate()
 
+  val (columns, initDf) = TimeUsage.read("/timeusage/atussum.csv")
+
   test("headerColumns size") {
     //val rdd = spark.sparkContext.textFile(TimeUsage.fsPath("/timeusage/atussum.csv"))
     //val headerColumns = rdd.first().split(",").to[List]
@@ -25,7 +27,7 @@ class TimeUsageSuite extends FunSuite with BeforeAndAfterAll {
     //val schema = TimeUsage.dfSchema(headerColumns)
     //schema.printTreeString()
 
-    val (columns, initDf) = TimeUsage.read("/timeusage/atussum.csv")
+    //val (columns, initDf) = TimeUsage.read("/timeusage/atussum.csv")
     val n = columns.size
     println(n)
     assert(n == 455, "ncols is 455")
@@ -34,16 +36,23 @@ class TimeUsageSuite extends FunSuite with BeforeAndAfterAll {
   test("row") {
     val line = List("20030100013280","1","-1","44")
     val r = TimeUsage.row(line)
-    println(r)
     assert(true)
   }
 
   test("classifiedColumns") {
-    val (columns, initDf) = TimeUsage.read("/timeusage/atussum.csv")
     val (primary, working, leisure) = TimeUsage.classifiedColumns(columns)
     assert(primary.size == 55, "primary does not have 55 column")
     assert(working.size == 23, "working does not have 23 column")
     assert(leisure.size == 346, "leisure does not have 346 column")
+  }
+
+  test("timeUsageSummary") {
+    val (primaryNeedsColumns, workColumns, otherColumns) = TimeUsage.classifiedColumns(columns)
+    val summaryDf = TimeUsage.timeUsageSummary(primaryNeedsColumns, workColumns, otherColumns, initDf)
+    //val v = summaryDf.collect()
+    //v.foreach(println)
+    summaryDf.show()
+    assert(true)
   }
 
 }
