@@ -206,8 +206,11 @@ object TimeUsage {
     * Hint: you should use the `getAs` method of `Row` to look up columns and
     * cast them at the same time.
     */
+  // working, sex, age, primaryNeeds, work, other
   def timeUsageSummaryTyped(timeUsageSummaryDf: DataFrame): Dataset[TimeUsageRow] =
-    ???
+    timeUsageSummaryDf.map(r => TimeUsageRow(r.getAs("working"),r.getAs("sex"),r.getAs("age"),
+                                             r.getAs("primaryNeeds"),r.getAs("work"),r.getAs("other")))
+
 
   /**
     * @return Same as `timeUsageGrouped`, but using the typed API when possible
