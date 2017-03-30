@@ -174,7 +174,7 @@ object TimeUsage {
     */
   // average time spent on each activity, for all the combinations of work status, sex and age.
   def timeUsageGrouped(summed: DataFrame): DataFrame = {
-    summed.groupBy("working","status","age")
+    summed.groupBy("working","sex","age")
           .agg(
                round(avg("primaryNeeds"), 1).as("primaryNeeds"),
                round(avg("work"), 1).as("work"),
