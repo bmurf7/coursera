@@ -139,7 +139,7 @@ object TimeUsage {
     otherColumns: List[Column],
     df: DataFrame
   ): DataFrame = {
-    val workingStatusProjection: Column = when(df("telfs") > 1 && df("telfs") < 3, "working").otherwise("not working").as("working")
+    val workingStatusProjection: Column = when(df("telfs") >= 1 && df("telfs") < 3, "working").otherwise("not working").as("working")
     val sexProjection: Column = when(df("tesex") === 1, "male").otherwise("female").as("sex")
     val ageProjection: Column = when(df("teage").between(15, 23), "young")
                                .when(df("teage").between(23, 55), "active")
