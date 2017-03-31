@@ -32,6 +32,16 @@ object TimeUsage {
     val summaryDf = timeUsageSummary(primaryNeedsColumns, workColumns, otherColumns, initDf)
     val finalDf = timeUsageGrouped(summaryDf)
     finalDf.show()
+
+    finalDf.coalesce(1).write.format("com.databricks.spark.csv").option("header","true").save("/Users/murphbt/coursera/spark/timeusage/out1")
+
+    val sql1 = timeUsageGroupedSql(summaryDf)
+    sql1.show()
+    sql1.coalesce(1).write.format("com.databricks.spark.csv").option("header","true").save("/Users/murphbt/coursera/spark/timeusage/out2")
+    val a = timeUsageSummaryTyped(summaryDf)
+    val b = timeUsageGroupedTyped(a)
+    b.show()
+    b.coalesce(1).write.format("com.databricks.spark.csv").option("header","true").save("/Users/murphbt/coursera/spark/timeusage/out3")
   }
 
   /** @return The read DataFrame along with its column names. */
@@ -197,7 +207,7 @@ object TimeUsage {
     * @param viewName Name of the SQL view to use
     */
   def timeUsageGroupedSqlQuery(viewName: String): String =
-    s"select working,sex,age,round(avg(primaryNeeds),1),round(avg(work),1),round(avg(other),1) from $viewName group by working,sex,age order by working,sex,age"
+    s"select working,sex,age,round(avg(primaryNeeds),1) as primaryNeeds,round(avg(work),1) as work,round(avg(other),1) as other from $viewName group by working,sex,age order by working,sex,age"
 
   /**
     * @return A `Dataset[TimeUsageRow]` from the “untyped” `DataFrame`
@@ -227,9 +237,9 @@ object TimeUsage {
     import org.apache.spark.sql.expressions.scalalang.typed
     summed.groupByKey(r => (r.working, r.sex, r.age))
       .agg(
-        round(typed.avg[TimeUsageRow](_.primaryNeeds)).as[Double],
-        round(typed.avg[TimeUsageRow](_.work)).as[Double],
-        round(typed.avg[TimeUsageRow](_.other)).as[Double]
+        round(typed.avg[TimeUsageRow](_.primaryNeeds),1).as("primaryNeeds").as[Double],
+        round(typed.avg[TimeUsageRow](_.work),1).as("work").as[Double],
+        round(typed.avg[TimeUsageRow](_.other),1).as("other").as[Double]
       )
       .map(p => TimeUsageRow(p._1._1,p._1._2,p._1._3,p._2,p._3,p._4))
       .orderBy("working","sex","age")
